@@ -1,0 +1,62 @@
+version: "3.9"
+services:
+  nginx:
+    build:
+      target: development
+      context: ./docker
+      dockerfile: nginx.dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www
+    depends_on:
+      - php
+  front-end:
+    command: ["npm", "run", "dev"]
+    build:
+      target: development
+      context: .
+      dockerfile: nodejs.dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/var/www
+      - /var/www/node_modules
+  php:
+    build:
+      target: development
+      context: ./docker
+      dockerfile: php.dockerfile
+    volumes:
+      - .:/var/www
+    depends_on:
+      - mysql
+  mysql:
+    platform: linux/x86_64
+    image: mysql:8.0
+    container_name: Database
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_ROOT: "root"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: PhpMyAdmin
+    links:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - 8081:80
+volumes:
+  mysql:
